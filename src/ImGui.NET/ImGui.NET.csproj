@@ -3,13 +3,13 @@
     <Description>A .NET wrapper for the Dear ImGui library.</Description>
     <AssemblyVersion>1.92.6.5</AssemblyVersion>
     <FileVersion>1.92.6.5</FileVersion>
-    <Version>1.92.6.5</Version>
+    <Version>1.92.6.6</Version>
     <Authors>Eric Mellino</Authors>
     <TargetFrameworks>netstandard2.0;net6.0;net8.0</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DebugType>portable</DebugType>
     <AssemblyName>ImGui.NET</AssemblyName>
-    <PackageId>RealTrainingSystems.ImGui.NET</PackageId>
+    <PackageId>RealTrainingSystems.ImGui</PackageId>
     <PackageVersion>$(Version)</PackageVersion>
     <PackageTags>ImGui ImGui.NET Immediate Mode GUI</PackageTags>
     <PackageProjectUrl>https://github.com/Real-Training-Systems/ImGui.NET</PackageProjectUrl>
@@ -51,12 +51,12 @@
       <PackagePath>runtimes/osx/native/libcimgui.dylib</PackagePath>
       <Pack>true</Pack>
     </Content>
-    <Content Include="build\net40\RealTrainingSystems.ImGui.NET.targets">
-      <PackagePath>build/net40/RealTrainingSystems.ImGui.NET.targets</PackagePath>
+    <Content Include="build\net40\RealTrainingSystems.ImGui.targets">
+      <PackagePath>build/net40/RealTrainingSystems.ImGui.targets</PackagePath>
       <Pack>true</Pack>
     </Content>
-    <Content Include="build\RealTrainingSystems.ImGui.NET.targets">
-      <PackagePath>build/RealTrainingSystems.ImGui.NET.targets</PackagePath>
+    <Content Include="build\RealTrainingSystems.ImGui.targets">
+      <PackagePath>build/RealTrainingSystems.ImGui.targets</PackagePath>
       <Pack>true</Pack>
     </Content>
   </ItemGroup>
