@@ -9,7 +9,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DebugType>portable</DebugType>
     <AssemblyName>ImGui.NET</AssemblyName>
-    <PackageId>RTS.ImGui.NET</PackageId>
+    <PackageId>RealTrainingSystems.ImGui.NET</PackageId>
     <PackageVersion>$(Version)</PackageVersion>
     <PackageTags>ImGui ImGui.NET Immediate Mode GUI</PackageTags>
     <PackageProjectUrl>https://github.com/Real-Training-Systems/ImGui.NET</PackageProjectUrl>
@@ -51,12 +51,12 @@
       <PackagePath>runtimes/osx/native/libcimgui.dylib</PackagePath>
       <Pack>true</Pack>
     </Content>
-    <Content Include="build\net40\RTS.ImGui.NET.targets">
-      <PackagePath>build/net40/RTS.ImGui.NET.targets</PackagePath>
+    <Content Include="build\net40\RealTrainingSystems.ImGui.NET.targets">
+      <PackagePath>build/net40/RealTrainingSystems.ImGui.NET.targets</PackagePath>
       <Pack>true</Pack>
     </Content>
-    <Content Include="build\RTS.ImGui.NET.targets">
-      <PackagePath>build/RTS.ImGui.NET.targets</PackagePath>
+    <Content Include="build\RealTrainingSystems.ImGui.NET.targets">
+      <PackagePath>build/RealTrainingSystems.ImGui.NET.targets</PackagePath>
       <Pack>true</Pack>
     </Content>
   </ItemGroup>
