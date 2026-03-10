@@ -91,7 +91,7 @@ namespace ImGuiNET.SampleProgram.XNA
                 ImGui.InputText("Text input", _textBuffer, 100);
 
                 ImGui.Text("Texture sample");
-                ImGui.Image(_imGuiTexture, new Num.Vector2(300, 150), Num.Vector2.Zero, Num.Vector2.One, Num.Vector4.One, Num.Vector4.One); // Here, the previously loaded texture is used
+                ImGui.Image(new ImTextureRef { _TexID = _imGuiTexture }, new Num.Vector2(300, 150), Num.Vector2.Zero, Num.Vector2.One); // Here, the previously loaded texture is used
             }
 
             // 2. Show another simple window, this time using an explicit Begin/End pair

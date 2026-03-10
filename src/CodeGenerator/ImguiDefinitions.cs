@@ -48,6 +48,7 @@ namespace CodeGenerator
                     variantsJson = JObject.Load(jr);
                 }
             }
+            variantsJson ??= new JObject();
 
             Variants = new Dictionary<string, MethodVariant>();
             foreach (var jt in variantsJson.Children())

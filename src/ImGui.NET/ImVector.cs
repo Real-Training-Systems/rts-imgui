@@ -33,6 +33,13 @@ namespace ImGuiNET
         public readonly int Capacity;
         public readonly IntPtr Data;
 
+        public ImVector(ImVector* vector)
+        {
+            Size = vector->Size;
+            Capacity = vector->Capacity;
+            Data = vector->Data;
+        }
+
         public ImVector(ImVector vector)
         {
             Size = vector.Size;

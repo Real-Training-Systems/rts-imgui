@@ -12,9 +12,10 @@ namespace ImGuiNET
         public int DisplayEnd;
         public int ItemsCount;
         public float ItemsHeight;
-        public float StartPosY;
+        public double StartPosY;
         public double StartSeekOffsetY;
         public void* TempData;
+        public ImGuiListClipperFlags Flags;
     }
     public unsafe partial struct ImGuiListClipperPtr
     {
@@ -29,9 +30,10 @@ namespace ImGuiNET
         public ref int DisplayEnd => ref Unsafe.AsRef<int>(&NativePtr->DisplayEnd);
         public ref int ItemsCount => ref Unsafe.AsRef<int>(&NativePtr->ItemsCount);
         public ref float ItemsHeight => ref Unsafe.AsRef<float>(&NativePtr->ItemsHeight);
-        public ref float StartPosY => ref Unsafe.AsRef<float>(&NativePtr->StartPosY);
+        public ref double StartPosY => ref Unsafe.AsRef<double>(&NativePtr->StartPosY);
         public ref double StartSeekOffsetY => ref Unsafe.AsRef<double>(&NativePtr->StartSeekOffsetY);
         public IntPtr TempData { get => (IntPtr)NativePtr->TempData; set => NativePtr->TempData = (void*)value; }
+        public ref ImGuiListClipperFlags Flags => ref Unsafe.AsRef<ImGuiListClipperFlags>(&NativePtr->Flags);
         public void Begin(int items_count)
         {
             float items_height = -1.0f;

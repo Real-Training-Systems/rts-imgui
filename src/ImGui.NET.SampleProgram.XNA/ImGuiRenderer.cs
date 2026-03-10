@@ -49,6 +49,7 @@ namespace ImGuiNET.SampleProgram.XNA
             _graphicsDevice = game.GraphicsDevice;
 
             _loadedTextures = new Dictionary<IntPtr, Texture2D>();
+            ImGui.GetIO().BackendFlags |= ImGuiBackendFlags.RendererHasTextures;
 
             _rasterizerState = new RasterizerState()
             {
@@ -68,29 +69,13 @@ namespace ImGuiNET.SampleProgram.XNA
         /// <summary>
         /// Creates a texture and loads the font data from ImGui. Should be called when the <see cref="GraphicsDevice" /> is initialized but before any rendering is done
         /// </summary>
-        public virtual unsafe void RebuildFontAtlas()
+        public virtual void RebuildFontAtlas()
         {
-            // Get font texture from ImGui
-            var io = ImGui.GetIO();
-            io.Fonts.GetTexDataAsRGBA32(out byte* pixelData, out int width, out int height, out int bytesPerPixel);
-
-            // Copy the data to a managed array
-            var pixels = new byte[width * height * bytesPerPixel];
-            unsafe { Marshal.Copy(new IntPtr(pixelData), pixels, 0, pixels.Length); }
-
-            // Create and register the texture as an XNA texture
-            var tex2d = new Texture2D(_graphicsDevice, width, height, false, SurfaceFormat.Color);
-            tex2d.SetData(pixels);
-
-            // Should a texture already have been build previously, unbind it first so it can be deallocated
-            if (_fontTextureId.HasValue) UnbindTexture(_fontTextureId.Value);
-
-            // Bind the new texture to an ImGui-friendly id
-            _fontTextureId = BindTexture(tex2d);
-
-            // Let ImGui know where to find the texture
-            io.Fonts.SetTexID(_fontTextureId.Value);
-            io.Fonts.ClearTexData(); // Clears CPU side texture data
+            if (_fontTextureId.HasValue)
+            {
+                UnbindTexture(_fontTextureId.Value);
+                _fontTextureId = null;
+            }
         }
 
         /// <summary>
@@ -132,10 +117,94 @@ namespace ImGuiNET.SampleProgram.XNA
         {
             ImGui.Render();
 
-            unsafe { RenderDrawData(ImGui.GetDrawData()); }
+            unsafe
+            {
+                ImDrawDataPtr drawData = ImGui.GetDrawData();
+                UpdateImGuiTextures(drawData);
+                RenderDrawData(drawData);
+            }
         }
 
         #endregion ImGuiRenderer
+
+        private unsafe void UpdateImGuiTextures(ImDrawDataPtr drawData)
+        {
+            if (drawData.NativePtr->Textures == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < drawData.Textures.Size; i++)
+            {
+                ImTextureDataPtr textureData = drawData.Textures[i];
+                switch (textureData.Status)
+                {
+                    case ImTextureStatus.WantCreate:
+                        CreateImGuiTexture(textureData);
+                        break;
+                    case ImTextureStatus.WantUpdates:
+                        UpdateImGuiTexture(textureData);
+                        break;
+                    case ImTextureStatus.WantDestroy when textureData.UnusedFrames > 0:
+                        DestroyImGuiTexture(textureData);
+                        break;
+                }
+            }
+        }
+
+        private void CreateImGuiTexture(ImTextureDataPtr textureData)
+        {
+            if (textureData.Format != ImTextureFormat.RGBA32)
+            {
+                throw new NotSupportedException($"Unsupported ImGui texture format: {textureData.Format}");
+            }
+
+            var pixels = new byte[textureData.GetSizeInBytes()];
+            Marshal.Copy(textureData.GetPixels(), pixels, 0, pixels.Length);
+
+            var texture = new Texture2D(_graphicsDevice, textureData.Width, textureData.Height, false, SurfaceFormat.Color);
+            texture.SetData(pixels);
+
+            IntPtr textureId = BindTexture(texture);
+            if (!_fontTextureId.HasValue)
+            {
+                _fontTextureId = textureId;
+            }
+
+            textureData.SetTexID(textureId);
+            textureData.SetStatus(ImTextureStatus.OK);
+        }
+
+        private void UpdateImGuiTexture(ImTextureDataPtr textureData)
+        {
+            IntPtr textureId = textureData.GetTexID();
+            if (!_loadedTextures.TryGetValue(textureId, out Texture2D texture))
+            {
+                throw new InvalidOperationException($"Could not find a texture with id '{textureId}', please check your bindings");
+            }
+
+            var pixels = new byte[textureData.GetSizeInBytes()];
+            Marshal.Copy(textureData.GetPixels(), pixels, 0, pixels.Length);
+            texture.SetData(pixels);
+            textureData.SetStatus(ImTextureStatus.OK);
+        }
+
+        private void DestroyImGuiTexture(ImTextureDataPtr textureData)
+        {
+            IntPtr textureId = textureData.GetTexID();
+            if (_loadedTextures.Remove(textureId, out Texture2D texture))
+            {
+                texture.Dispose();
+            }
+
+            if (_fontTextureId == textureId)
+            {
+                _fontTextureId = null;
+            }
+
+            textureData.SetTexID(IntPtr.Zero);
+            textureData.SetStatus(ImTextureStatus.Destroyed);
+        }
 
         #region Setup & Update
 
@@ -395,9 +464,10 @@ namespace ImGuiNET.SampleProgram.XNA
                         continue;
                     }
 
-                    if (!_loadedTextures.ContainsKey(drawCmd.TextureId))
+                    IntPtr textureId = drawCmd.GetTexID();
+                    if (!_loadedTextures.ContainsKey(textureId))
                     {
-                        throw new InvalidOperationException($"Could not find a texture with id '{drawCmd.TextureId}', please check your bindings");
+                        throw new InvalidOperationException($"Could not find a texture with id '{textureId}', please check your bindings");
                     }
 
                     _graphicsDevice.ScissorRectangle = new Rectangle(
@@ -407,7 +477,7 @@ namespace ImGuiNET.SampleProgram.XNA
                         (int)(drawCmd.ClipRect.W - drawCmd.ClipRect.Y)
                     );
 
-                    var effect = UpdateEffect(_loadedTextures[drawCmd.TextureId]);
+                    var effect = UpdateEffect(_loadedTextures[textureId]);
 
                     foreach (var pass in effect.CurrentTechnique.Passes)
                     {

@@ -639,6 +639,14 @@ namespace CodeGenerator
                     marshalledParameters[i] = new MarshalledParameter("IntPtr", false, nativeArgName, false);
                     preCallLines.Add($"{nativePtrTypeName} {nativeArgName} = ({nativePtrTypeName}){correctedIdentifier}.ToPointer();");
                 }
+                else if ((tr.Type.EndsWith("*") || tr.Type.EndsWith("&"))
+                    && nativeTypeName == "IntPtr"
+                    && tr.Type != "ImGuiContext*"
+                    && tr.Type != "ImPlotContext*"
+                    && tr.Type != "EditorContext*")
+                {
+                    marshalledParameters[i] = new MarshalledParameter("IntPtr", false, correctedIdentifier, false);
+                }
                 else if (GetWrappedType(tr.Type, out string wrappedParamType)
                     && !TypeInfo.WellKnownTypes.ContainsKey(tr.Type)
                     && !TypeInfo.WellKnownTypes.ContainsKey(tr.Type.Substring(0, tr.Type.Length - 1)))
@@ -743,6 +751,10 @@ namespace CodeGenerator
                 if (mp.IsPinned)
                 {
                     string nativePinType = GetTypeString(tr.Type, false);
+                    if (!nativePinType.EndsWith("*", StringComparison.Ordinal))
+                    {
+                        nativePinType += "*";
+                    }
                     writer.PushBlock($"fixed ({nativePinType} native_{tr.Name} = &{mp.PinTarget})");
                 }
 
