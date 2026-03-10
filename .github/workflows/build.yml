@@ -1,13 +1,17 @@
 name: CI
 on:
-  create: # when tags are created
   push:
     branches: [ master ]
+    tags:
+      - "v*"
   pull_request:
     branches: [ master ]
 jobs:
   Build_Windows:
     runs-on: windows-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
@@ -39,6 +43,10 @@ jobs:
         bin/Release/CodeGenerator/net8.0/CodeGenerator.exe "src/ImGui.NET/Generated"
         git status -s | findstr . && echo "ERROR: CodeGenerator is not executed, please execute it." && exit 1 || exit 0
 
-    - name: Publish to nuget.org
+    - name: Add GitHub Packages source
       if: startsWith(github.ref, 'refs/tags/')
-      run: dotnet nuget push bin\Release\ImGui.NET\*.nupkg -s https://api.nuget.org/v3/index.json --api-key ${{secrets.NUGET_KEY}}
+      run: dotnet nuget add source --username "${{ github.actor }}" --password "${{ secrets.GITHUB_TOKEN }}" --store-password-in-clear-text --name github "https://nuget.pkg.github.com/Real-Training-Systems/index.json"
+
+    - name: Publish to GitHub Packages
+      if: startsWith(github.ref, 'refs/tags/')
+      run: dotnet nuget push bin\Release\ImGui.NET\*.nupkg --source github --api-key ${{ secrets.GITHUB_TOKEN }} --skip-duplicate
