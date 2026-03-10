@@ -1,17 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Description>A .NET wrapper for the Dear ImGui library.</Description>
-    <AssemblyVersion>1.92.6.1</AssemblyVersion>
+    <AssemblyVersion>1.92.6.2</AssemblyVersion>
+    <FileVersion>1.92.6.2</FileVersion>
+    <Version>1.92.6.2</Version>
     <Authors>Eric Mellino</Authors>
     <TargetFrameworks>netstandard2.0;net6.0;net8.0</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DebugType>portable</DebugType>
     <AssemblyName>ImGui.NET</AssemblyName>
-    <PackageId>ImGui.NET</PackageId>
-    <PackagePrereleaseIdentifier></PackagePrereleaseIdentifier>
-    <PackageVersion>$(AssemblyVersion)$(PackagePrereleaseIdentifier)</PackageVersion>
+    <PackageId>RTS.ImGui.NET</PackageId>
+    <PackageVersion>$(Version)</PackageVersion>
     <PackageTags>ImGui ImGui.NET Immediate Mode GUI</PackageTags>
-    <PackageProjectUrl>https://github.com/mellinoe/imgui.net</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/Real-Training-Systems/ImGui.NET</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Real-Training-Systems/ImGui.NET</RepositoryUrl>
     <DocumentationFile Condition="'$(Configuration)' == 'Release'">$(OutputPath)\ImGui.NET.xml</DocumentationFile>
     <RootNamespace>ImGuiNET</RootNamespace>
   </PropertyGroup>
@@ -49,12 +51,12 @@
       <PackagePath>runtimes/osx/native/libcimgui.dylib</PackagePath>
       <Pack>true</Pack>
     </Content>
-    <Content Include="build\net40\ImGui.NET.targets">
-      <PackagePath>build/net40/ImGui.NET.targets</PackagePath>
+    <Content Include="build\net40\RTS.ImGui.NET.targets">
+      <PackagePath>build/net40/RTS.ImGui.NET.targets</PackagePath>
       <Pack>true</Pack>
     </Content>
-    <Content Include="build\ImGui.NET.targets">
-      <PackagePath>build/ImGui.NET.targets</PackagePath>
+    <Content Include="build\RTS.ImGui.NET.targets">
+      <PackagePath>build/RTS.ImGui.NET.targets</PackagePath>
       <Pack>true</Pack>
     </Content>
   </ItemGroup>
