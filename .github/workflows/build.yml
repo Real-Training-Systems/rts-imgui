@@ -35,6 +35,7 @@ jobs:
       packages: write
     env:
       LINUX_GLIBC_MAX_VERSION: "2.28"
+      CIMGUI_COMMIT: "715802490eabca2fc86cf25b41b83aa7c5d6060d"
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
@@ -46,25 +47,32 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
-    - name: Rebuild Linux native cimgui on Rocky 8
+    - name: Rebuild Linux native cimgui on Rocky 8 from pinned source
       run: |
         docker run --rm \
           -v "${{ github.workspace }}:/workspace" \
           -w /workspace \
+          -e CIMGUI_COMMIT="${{ env.CIMGUI_COMMIT }}" \
           rockylinux:8 \
           bash -lc '
             dnf install -y git cmake gcc-c++ make binutils
-            workdir=/tmp/imgui-net-nativebuild
+            workdir=/tmp/cimgui-build
             rm -rf "$workdir"
-            git clone --depth 1 https://github.com/ImGuiNET/ImGui.NET-nativebuild.git "$workdir"
+            git clone https://github.com/cimgui/cimgui.git "$workdir"
             pushd "$workdir"
+            git checkout "$CIMGUI_COMMIT"
             git submodule update --init --recursive
-            ./build-native.sh release
+            cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+            cmake --build build -j
             popd
 
             mkdir -p /workspace/deps/cimgui/linux-x64
-            cp "$workdir/cimgui/build/Release/cimgui.so" /workspace/deps/cimgui/linux-x64/cimgui.so
+            cp "$workdir/build/cimgui.so" /workspace/deps/cimgui/linux-x64/cimgui.so
           '
+
+    - name: Verify required symbols are exported
+      run: |
+        nm -D deps/cimgui/linux-x64/cimgui.so | grep -q " igGetIO_Nil$"
 
     - name: Verify Linux native GLIBC compatibility floor
       run: |

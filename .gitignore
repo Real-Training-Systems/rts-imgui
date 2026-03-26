@@ -250,7 +250,6 @@ Session.vim
 *~
 
 # VS Code junk
-.vscode
 
 # MSVC Stuff
 *.VC.db
@@ -263,3 +262,7 @@ deps/
 
 # VS Launch
 launchSettings.json
+temp_auto_push.bat
+temp_interactive_push.bat
+.gitignore
+branch_structure.json
