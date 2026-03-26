@@ -11,7 +11,6 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: read
-      packages: write
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
@@ -29,19 +28,108 @@ jobs:
     - name: Build Project
       run: dotnet build -c Release --no-restore src
 
+  Pack_And_Publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      LINUX_GLIBC_MAX_VERSION: "2.28"
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Install .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Rebuild Linux native cimgui on Rocky 8
+      run: |
+        docker run --rm \
+          -v "${{ github.workspace }}:/workspace" \
+          -w /workspace \
+          rockylinux:8 \
+          bash -lc '
+            dnf install -y git cmake gcc-c++ make binutils
+            workdir=/tmp/imgui-net-nativebuild
+            rm -rf "$workdir"
+            git clone --depth 1 https://github.com/ImGuiNET/ImGui.NET-nativebuild.git "$workdir"
+            pushd "$workdir"
+            git submodule update --init --recursive
+            ./build-native.sh release
+            popd
+
+            mkdir -p /workspace/deps/cimgui/linux-x64
+            cp "$workdir/cimgui/build/Release/cimgui.so" /workspace/deps/cimgui/linux-x64/cimgui.so
+          '
+
+    - name: Verify Linux native GLIBC compatibility floor
+      run: |
+        lib_path="deps/cimgui/linux-x64/cimgui.so"
+        if [[ ! -f "$lib_path" ]]; then
+          echo "ERROR: native library not found at $lib_path" >&2
+          exit 1
+        fi
+
+        versions="$(
+          objdump -T "$lib_path" \
+            | grep -oE 'GLIBC_[0-9]+\.[0-9]+' \
+            | sed 's/GLIBC_//' \
+            | sort -u
+        )"
+
+        if [[ -z "$versions" ]]; then
+          echo "ERROR: No GLIBC symbols found in $lib_path" >&2
+          exit 1
+        fi
+
+        echo "Found GLIBC symbols:"
+        echo "$versions"
+
+        max_major="${LINUX_GLIBC_MAX_VERSION%%.*}"
+        max_minor="${LINUX_GLIBC_MAX_VERSION##*.}"
+
+        violations="$(
+          awk -v max_major="$max_major" -v max_minor="$max_minor" -F'.' '
+            {
+              major=$1 + 0
+              minor=$2 + 0
+              if (major > max_major || (major == max_major && minor > max_minor)) {
+                print $0
+              }
+            }' <<< "$versions"
+        )"
+
+        if [[ -n "$violations" ]]; then
+          echo "ERROR: Found GLIBC symbols above ${LINUX_GLIBC_MAX_VERSION}:" >&2
+          echo "$violations" >&2
+          exit 1
+        fi
+
+        echo "GLIBC symbol check passed."
+
+    - name: Restore dependencies
+      run: dotnet restore src
+
+    - name: Build Project
+      run: dotnet build -c Release --no-restore src
+
     - name: Build Packages
       run: dotnet pack src/ImGui.NET -c Release --no-restore --no-build
 
     - name: List Packages
-      run: ls -l bin\Release\ImGui.NET\
+      run: ls -l bin/Release/ImGui.NET/
 
     - name: Validate Generated Code
       if: false # startsWith(github.ref, 'refs/tags/')
-      shell: bash
       run: |
         echo "Running CodeGenerator"
-        bin/Release/CodeGenerator/net8.0/CodeGenerator.exe "src/ImGui.NET/Generated"
-        git status -s | findstr . && echo "ERROR: CodeGenerator is not executed, please execute it." && exit 1 || exit 0
+        dotnet run --project src/CodeGenerator -- "src/ImGui.NET/Generated"
+        git status --short
+        test -z "$(git status --porcelain)" || (echo "ERROR: CodeGenerator output is not up-to-date." && exit 1)
 
     - name: Add GitHub Packages source
       if: startsWith(github.ref, 'refs/tags/')
@@ -49,4 +137,4 @@ jobs:
 
     - name: Publish to GitHub Packages
       if: startsWith(github.ref, 'refs/tags/')
-      run: dotnet nuget push bin\Release\ImGui.NET\*.nupkg --source github --api-key ${{ secrets.GITHUB_TOKEN }} --skip-duplicate
+      run: dotnet nuget push "bin/Release/ImGui.NET/*.nupkg" --source github --api-key ${{ secrets.GITHUB_TOKEN }} --skip-duplicate
